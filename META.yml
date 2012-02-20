@@ -34,14 +34,13 @@ requires:
   Path::Class: 0
   Throwable::Error: 0
   Tree: 0
-  Try::Tiny: 0
   perl: 5.010
   strict: 0
   utf8: 0
 resources:
   bugtracker: https://github.com/mjgardner/Tree-Path-Class/issues
   repository: git://github.com/mjgardner/Tree-Path-Class.git
-version: 0.001
+version: 0.002
 x_Dist_Zilla:
   plugins:
     -
