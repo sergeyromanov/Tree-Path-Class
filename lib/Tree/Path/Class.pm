@@ -7,7 +7,7 @@ package Tree::Path::Class;
 }
 use strict;
 
-our $VERSION = '0.002';    # VERSION
+our $VERSION = '0.003';    # VERSION
 use Const::Fast;
 use English '-no_match_vars';
 use Path::Class;
@@ -19,6 +19,7 @@ use MooseX::Types::Path::Class qw(Dir is_Dir to_Dir File is_File to_File);
 use MooseX::MarkAsMethods autoclean => 1;
 extends 'Tree';
 
+# make our own error class for throwing exceptions
 const my $ERROR => __PACKAGE__ . '::Error';
 Moose::Meta::Class->create(
     $ERROR => ( superclasses => ['Throwable::Error'] ) );
@@ -26,6 +27,7 @@ Moose::Meta::Class->create(
 # defang Moose's hashref params
 around BUILDARGS => sub { &{ $ARG[0] }( $ARG[1] ) };
 
+# coerce constructor arguments to Dir or File
 sub FOREIGNBUILDARGS { return _value_to_path( @ARG[ 1 .. $#ARG ] ) }
 
 has path => (
@@ -36,6 +38,7 @@ has path => (
     default  => sub { $ARG[0]->_tree_to_path },
 );
 
+# update path every time value changes
 around set_value => sub {
     my ( $orig, $self ) = splice @ARG, 0, 2;
     $self->$orig( _value_to_path(@ARG) );
@@ -44,14 +47,13 @@ around set_value => sub {
 };
 
 around add_child => sub {
-    my ( $orig, $self ) = splice @ARG, 0, 2;
+    my ( $orig, $self, @nodes ) = @ARG;
 
     my $options_ref;
-    if ( ref $ARG[0] eq 'HASH' and not blessed $ARG[0] ) {
-        $options_ref = shift;
+    if ( ref $nodes[0] eq 'HASH' and not blessed $nodes[0] ) {
+        $options_ref = shift @nodes;
     }
 
-    my @nodes = @ARG;
     for my $node (@nodes) {
         given ( blessed $node) {
             when (__PACKAGE__) {next}
@@ -62,17 +64,10 @@ around add_child => sub {
             }
         }
     }
+
     if ($options_ref) { unshift @nodes, $options_ref }
     return $self->$orig(@nodes);
 };
-
-sub _tree_to_tpc {
-    my $tree = shift;
-    my $tpc  = __PACKAGE__->new( $tree->value );
-    if ( $tree->meta ) { $tpc->meta( $tree->meta ) }
-    for ( $tree->children ) { $tpc->add_child($ARG) }
-    return $tpc;
-}
 
 after add_child => sub {
     for my $child ( shift->children ) {
@@ -80,6 +75,15 @@ after add_child => sub {
     }
 };
 
+# recursively convert Tree and children into Tree::Path::Classes
+sub _tree_to_tpc {
+    my $tree = shift;
+    my $tpc  = __PACKAGE__->new( $tree->value );
+    for ( $tree->children ) { $tpc->add_child($ARG) }
+    return $tpc;
+}
+
+# recursively derive path from current and parents' values
 sub _tree_to_path {
     my $self   = shift;
     my @path   = $self->value;
@@ -90,6 +94,7 @@ sub _tree_to_path {
     return _value_to_path(@path);
 }
 
+# coerce a value to a Dir or File if necessary
 sub _value_to_path {
     return if !@ARG;
     my @args = @ARG;
@@ -123,7 +128,7 @@ Tree::Path::Class - Tree for Path::Class objects
 
 =head1 VERSION
 
-version 0.002
+version 0.003
 
 =head1 SYNOPSIS
 
@@ -165,6 +170,11 @@ before passing it on to the superclass constructor.
 Works just like L<the superclass' method|Tree/add_child>.  Plain L<Tree|Tree>
 nodes will be recursively recreated as C<Tree::Path::Class>
 nodes when added.
+
+=head2 meta
+
+Unlike L<Tree|Tree>, this method provides access to the underlying
+L<Moose|Moose> meta-object rather than a hashref of arbitrary metadata.
 
 =head1 SUPPORT
 

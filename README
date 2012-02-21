@@ -2,7 +2,7 @@ NAME
     Tree::Path::Class - Tree for Path::Class objects
 
 VERSION
-    version 0.002
+    version 0.003
 
 SYNOPSIS
         use Tree::Path::Class;
@@ -33,6 +33,10 @@ METHODS
   add_child
     Works just like the superclass' method. Plain Tree nodes will be
     recursively recreated as "Tree::Path::Class" nodes when added.
+
+  meta
+    Unlike Tree, this method provides access to the underlying Moose
+    meta-object rather than a hashref of arbitrary metadata.
 
 SUPPORT
   Perldoc
