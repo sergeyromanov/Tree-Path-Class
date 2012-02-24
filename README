@@ -2,7 +2,7 @@ NAME
     Tree::Path::Class - Tree for Path::Class objects
 
 VERSION
-    version 0.003
+    version 0.004
 
 SYNOPSIS
         use Tree::Path::Class;

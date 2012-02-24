@@ -7,22 +7,16 @@ package Tree::Path::Class;
 }
 use strict;
 
-our $VERSION = '0.003';    # VERSION
+our $VERSION = '0.004';    # VERSION
 use Const::Fast;
 use English '-no_match_vars';
 use Path::Class;
 use Moose;
-use Moose::Util::TypeConstraints;
 use MooseX::Has::Options;
 use MooseX::NonMoose;
-use MooseX::Types::Path::Class qw(Dir is_Dir to_Dir File is_File to_File);
+use Tree::Path::Class::Types qw(TreePath TreePathValue);
 use MooseX::MarkAsMethods autoclean => 1;
 extends 'Tree';
-
-# make our own error class for throwing exceptions
-const my $ERROR => __PACKAGE__ . '::Error';
-Moose::Meta::Class->create(
-    $ERROR => ( superclasses => ['Throwable::Error'] ) );
 
 # defang Moose's hashref params
 around BUILDARGS => sub { &{ $ARG[0] }( $ARG[1] ) };
@@ -31,8 +25,8 @@ around BUILDARGS => sub { &{ $ARG[0] }( $ARG[1] ) };
 sub FOREIGNBUILDARGS { return _value_to_path( @ARG[ 1 .. $#ARG ] ) }
 
 has path => (
-    qw(:ro :lazy),
-    isa => maybe_type( union( [ Dir, File ] ) ),
+    qw(:ro :lazy :coerce),
+    isa      => TreePathValue,
     init_arg => undef,
     writer   => '_set_path',
     default  => sub { $ARG[0]->_tree_to_path },
@@ -54,15 +48,8 @@ around add_child => sub {
         $options_ref = shift @nodes;
     }
 
-    for my $node (@nodes) {
-        given ( blessed $node) {
-            when (__PACKAGE__) {next}
-            when ('Tree') { $node = _tree_to_tpc($node) }
-            default {
-                $ERROR->throw(
-                    'can only add ' . __PACKAGE__ . ' or Tree children' );
-            }
-        }
+    for (@nodes) {
+        if ( !TreePath->check($_) ) { $_ = TreePath->assert_coerce($_) }
     }
 
     if ($options_ref) { unshift @nodes, $options_ref }
@@ -74,14 +61,6 @@ after add_child => sub {
         $child->_set_path( $child->_tree_to_path );
     }
 };
-
-# recursively convert Tree and children into Tree::Path::Classes
-sub _tree_to_tpc {
-    my $tree = shift;
-    my $tpc  = __PACKAGE__->new( $tree->value );
-    for ( $tree->children ) { $tpc->add_child($ARG) }
-    return $tpc;
-}
 
 # recursively derive path from current and parents' values
 sub _tree_to_path {
@@ -96,18 +75,13 @@ sub _tree_to_path {
 
 # coerce a value to a Dir or File if necessary
 sub _value_to_path {
-    return if !@ARG;
-    my @args = @ARG;
-    for my $arg ( grep {$ARG} @args ) {
-        if ( not( is_Dir($arg) or is_File($arg) ) ) {
-            $arg = to_Dir($arg) or $ERROR->throw(q{couldn't coerce to a dir});
-        }
-    }
-    return is_File( $args[-1] ) ? to_File( \@args ) : to_Dir( \@args );
+    my @args = @_;
+    return TreePathValue->check( \@args )
+        ? @args
+        : TreePathValue->assert_coerce( \@args );
 }
 
 __PACKAGE__->meta->make_immutable();
-no Moose::Util::TypeConstraints;
 no Moose;
 1;
 
@@ -128,7 +102,7 @@ Tree::Path::Class - Tree for Path::Class objects
 
 =head1 VERSION
 
-version 0.003
+version 0.004
 
 =head1 SYNOPSIS
 
