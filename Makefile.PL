@@ -12,6 +12,7 @@ my %WriteMakefileArgs = (
   "ABSTRACT" => "Tree for Path::Class objects",
   "AUTHOR" => "Mark Gardner <mjgardner\@cpan.org>",
   "BUILD_REQUIRES" => {
+    "English" => 0,
     "File::Find" => 0,
     "File::Temp" => 0,
     "Scalar::Util" => 0,
@@ -29,8 +30,6 @@ my %WriteMakefileArgs = (
   "NAME" => "Tree::Path::Class",
   "PREREQ_PM" => {
     "Carp" => 0,
-    "Const::Fast" => 0,
-    "English" => 0,
     "Modern::Perl" => 0,
     "Moose" => 0,
     "MooseX::Has::Options" => 0,
@@ -44,7 +43,7 @@ my %WriteMakefileArgs = (
     "strict" => 0,
     "utf8" => 0
   },
-  "VERSION" => "0.004",
+  "VERSION" => "0.005",
   "test" => {
     "TESTS" => "t/*.t"
   }

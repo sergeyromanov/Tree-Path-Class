@@ -7,7 +7,7 @@ package Tree::Path::Class::Types;
 }
 use strict;
 
-our $VERSION = '0.004';    # VERSION
+our $VERSION = '0.005';    # VERSION
 use Carp;
 use Path::Class;
 use MooseX::Types -declare => [qw(TreePath TreePathValue Tree)];
@@ -63,7 +63,7 @@ Tree::Path::Class::Types - Type library for Tree::Path::Class
 
 =head1 VERSION
 
-version 0.004
+version 0.005
 
 =head1 SYNOPSIS
 
